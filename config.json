@@ -1,0 +1,38 @@
+{
+    "mqtt": {
+        "broker": "192.168.2.104",
+        "port": 1883,
+        "base_topic": "commutator"
+    },
+    
+    "sensors": [
+        {
+            "id": 1,
+            "connection": {
+                "type": "serial",
+                "port": "/dev/ttyUSB0",
+                "baudrate": 115200
+            },
+            "name": "PS_1",
+            "units": "psi",
+            "processing": {
+                "offset": 0,
+                "calibration_factor": 1.0
+            }
+        }
+    ],
+    
+    "valves": [
+        {
+            "id": 1,
+            "name": "V_1",
+            "pin": 22,
+            "connection": {
+                "type": "serial",
+                "port": "/dev/ttyUSB0",
+                "baudrate": 115200
+            },
+            "default_status": false
+        }
+    ]
+}
