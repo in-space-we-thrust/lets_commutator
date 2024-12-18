@@ -1,4 +1,3 @@
-
 import json
 import threading
 import time
@@ -108,7 +107,7 @@ class Commutator:
 
     def _on_mqtt_connect(self, client, userdata, flags, rc):
         print(f"Connected to MQTT broker with code: {rc}")
-        # Subscribe to valve control commands
+        # Subscription is already correct: commutator/valves/+/command
         topic = f"{self.mqtt_config['base_topic']}/valves/+/command"
         client.subscribe(topic)
 
@@ -135,17 +134,18 @@ class Commutator:
                         connection.send_message(command_str)
                         
                         # Update valve status and publish state
-                        valve.status = command.get('status', False)
+                        valve.status = command.get('state', False)
                         self._publish_valve_state(valve)
                         
         except Exception as e:
             print(f"Error processing MQTT message: {e}")
 
     def _publish_valve_state(self, valve):
-        topic = f"{self.mqtt_config['base_topic']}/valves/{valve.id}/state"
+        # Change from 'state' to 'status' in topic name
+        topic = f"{self.mqtt_config['base_topic']}/valves/{valve.id}/status"
         payload = json.dumps({
-            'id': valve.id,
-            'status': valve.status,
+            'valve_id': valve.id,
+            'state': valve.status,
             'timestamp': time.time()
         })
         self.mqtt_client.publish(topic, payload)
