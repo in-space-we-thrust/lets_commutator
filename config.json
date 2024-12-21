@@ -24,8 +24,8 @@
     
     "valves": [
         {
-            "id": 1,
-            "name": "V_1",
+            "id": 4,
+            "name": "V_4",
             "pin": 22,
             "connection": {
                 "type": "serial",
