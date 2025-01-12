@@ -1,11 +1,13 @@
 import json
 import serial
 import serial.serialutil
+import serial.tools.list_ports
 import paho.mqtt.client as mqtt
 from abc import ABC, abstractmethod
 from queue import Queue, Full
 from collections import deque
 from threading import Lock, Event
+import time
 
 class Connection(ABC):
     @abstractmethod
@@ -24,6 +26,45 @@ class Connection(ABC):
     def read_message(self):
         pass
 
+class DeviceDiscovery:
+    @staticmethod
+    def find_devices(timeout=2.0):
+        devices = []
+        ports = serial.tools.list_ports.comports()
+        
+        for port in ports:
+            try:
+                connection = serial.Serial(
+                    port=port.device,
+                    baudrate=115200,
+                    timeout=0.1
+                )
+                
+                start_time = time.time()
+                device_uuid = None
+                
+                while time.time() - start_time < timeout:
+                    if connection.in_waiting:
+                        try:
+                            line = connection.readline().decode().strip()
+                            data = json.loads(line)
+                            if 'uuid' in data:
+                                device_uuid = data['uuid']
+                                devices.append({
+                                    'port': port.device,
+                                    'uuid': device_uuid
+                                })
+                                break
+                        except:
+                            pass
+                
+                connection.close()
+                
+            except:
+                continue
+                
+        return devices
+
 class SerialConnection(Connection):
     def __init__(self, config):
         self.port = config['port']
@@ -32,6 +73,13 @@ class SerialConnection(Connection):
         self.lock = Lock()
         self.write_timeout = 0.05  # Уменьшаем таймаут для более быстрой реакции
         self.read_timeout = 0.05   # Добавляем таймаут для чтения
+        self.uuid = None
+    
+    def get_uuid(self):
+        return self.uuid
+        
+    def set_uuid(self, uuid):
+        self.uuid = uuid
 
     def connect(self):
         try:
