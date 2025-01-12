@@ -1,4 +1,3 @@
-
 import json
 import os
 
@@ -12,13 +11,10 @@ def load_config(file_path):
         with open(file_path, 'r') as f:
             config = json.load(f)
             
-        # Basic validation
-        required_sections = ['mqtt', 'sensors', 'valves']
-        for section in required_sections:
-            if section not in config:
-                print(f"Missing required section in config: {section}")
-                return None
-                
+        if 'mqtt' not in config:
+            print("Missing MQTT configuration")
+            return None
+            
         return config
         
     except Exception as e:
