@@ -128,7 +128,7 @@ class Commutator:
                         command_str = json.dumps({
                             "type": 1,
                             "command": 17,
-                            "valve_pin": valve.pin,
+                            "valve_pin": command.get('pin'),
                             "status": command.get('status', False)
                         })
                         connection.send_message(command_str)
