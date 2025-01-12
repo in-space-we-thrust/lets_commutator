@@ -31,6 +31,9 @@ class Commutator:
         # Discover available devices
         discovered_devices = DeviceDiscovery.find_devices()
         
+        # Store discovered ports to avoid using non-existent ones from config
+        discovered_ports = {device['port'] for device in discovered_devices}
+        
         for device in discovered_devices:
             connection_config = {
                 'type': 'serial',
@@ -43,20 +46,29 @@ class Commutator:
                 connection.set_uuid(device['uuid'])
                 self.connections[device['port']] = connection
                 self.device_connections[device['uuid']] = connection
+                print(f"Connected to device {device['uuid']} on port {device['port']}")
         
-        # Initialize sensors
+        # Initialize sensors only for discovered ports
         for sensor_config in self.config.get('sensors', []):
-            sensor = Sensor.from_json(sensor_config)
-            self.sensors[sensor.id] = sensor
-            self._ensure_connection(sensor.connection)
-
-        # Initialize valves
+            port = sensor_config['connection'].get('port')
+            if port in discovered_ports:
+                sensor = Sensor.from_json(sensor_config)
+                self.sensors[sensor.id] = sensor
+        
+        # Initialize valves only for discovered ports
         for valve_config in self.config.get('valves', []):
-            valve = Valve.from_json(valve_config)
-            self.valves[valve.id] = valve
-            self._ensure_connection(valve.connection)
+            port = valve_config['connection'].get('port')
+            if port in discovered_ports:
+                valve = Valve.from_json(valve_config)
+                self.valves[valve.id] = valve
 
     def _ensure_connection(self, connection_config):
+        # Skip if port doesn't exist
+        if isinstance(connection_config, dict) and 'port' in connection_config:
+            port = connection_config['port']
+            if port not in self.connections:
+                return
+
         key = self._make_connection_key(connection_config)
         if key not in self.connections:
             connection = create_connection(connection_config)
