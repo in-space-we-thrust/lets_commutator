@@ -81,10 +81,18 @@ class Commutator:
     def _on_mqtt_message(self, client, userdata, msg):
         try:
             command = json.loads(msg.payload)
-            device_uuid = command.get('uuid')
+            device_uuid = command.get('device_uuid')
             if device_uuid and device_uuid in self.device_connections:
                 connection = self.device_connections[device_uuid]
                 if isinstance(connection, SerialConnection):
-                    connection.send_message(msg.payload.decode())
+                    success = connection.send_message(msg.payload.decode())
+                    # Send status message
+                    status_topic = f"{self.mqtt_config['base_topic']}/devices/{device_uuid}/status"
+                    status = {
+                        "timestamp": time.time(),
+                        "command": command,
+                        "status": "delivered" if success else "failed"
+                    }
+                    self.mqtt_client.publish(status_topic, msg.payload)
         except Exception as e:
             print(f"Error processing MQTT message: {e}")
